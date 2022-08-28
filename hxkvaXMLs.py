@@ -8,7 +8,7 @@ import fileinput
 
 #variables
 delay = 0.05
-debug = True
+debug = False
 
 #niftar object
 class Niftar:
@@ -137,6 +137,13 @@ def haxcaba(nftr):
             HASHCABHA = file.read().replace('\n', '')
     HASHCABHA = HASHCABHA.replace('{{NAME}}', nftr.fullRabName)
     return HASHCABHA
+# function for making Y to True and N to False
+def boolear(yesOrNo):
+    if yesOrNo == 'Y':
+        yesOrNo = True
+    else:
+        yesOrNo = False
+    return yesOrNo
 # returning the suitable block if sefaradi or maroqai
 def isMrq(nftr):
     if nftr.maroqai:
@@ -151,10 +158,10 @@ if debug :
     theNiftar = Niftar("אהרן", True, "יוכבד", False, False, "א'", 'אב', 'ב`תפ"ז')
 else:
     name = input("Enter niftar's name: ")
-    male = input("Is male? (Y/N): ")
+    male = boolear(input("Is male? (Y/N): "))
     mother = input("Enter niftar's mother name: ")
-    rab = input("Is rab? (Y/N): ")
-    maroqai = input("Is maroqai? (Y/N): ")
+    rab = boolear(input("Is rab? (Y/N): "))
+    maroqai = boolear(input("Is maroqai? (Y/N): "))
     day = input("Enter niftar's day of ptira: ")
     month = input("Enter niftar's month of ptira: ")
     year = input("Enter niftar's year of ptira: ")
