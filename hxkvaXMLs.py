@@ -4,11 +4,28 @@ import time
 from os.path import exists
 import fileinput
 import sys
-import fileinput
+import PySimpleGUIQt as sg
+with open('modification parts/years.txt', 'r', encoding="utf8") as file:
+    YEARS = file.read()
+with open('modification parts/months.txt', 'r', encoding="utf8") as file:
+    MONTHS = file.read()
+sg.theme('Black')   # Add a touch of color
+# All the stuff inside your window.
+layout = [  [sg.InputText(), sg.Text('שם הנפטר/ת:')],
+            [sg.Radio('בן', "sex", key='male', default=True), sg.Radio('בת', "sex", key='female')],
+            [sg.InputText(), sg.Text('שם אמו/ה:')],
+            [sg.Checkbox('רב/נית'), sg.Checkbox('מרוקאי/ת')],
+            [sg.Combo(YEARS.split(',')),sg.Combo(MONTHS.replace('"','').replace('\n','').split(',')),sg.Combo(YEARS.split(',')[:30])],
+            [sg.Button('אישור'), sg.Button('ביטול')] ]
+
+# Create the Window
+window = sg.Window('השכבה', layout, text_justification="right")
+
 
 #variables
 delay = 0.05
 debug = False
+cli = False
 
 #niftar object
 class Niftar:
@@ -153,69 +170,93 @@ def isMrq(nftr):
         with open('modification parts/sfradiNesama.xml', 'r', encoding="utf8") as file:
             PART = file.read().replace('\n', '')
     return PART
+if cli:
+    if debug :
+        theNiftar = Niftar("אהרן", True, "יוכבד", False, False, "א'", 'אב', 'ב`תפ"ז')
+        magic()
+    else:
+        name = input("Enter niftar's name: ")
+        male = boolear(input("Is male? (Y/N): "))
+        mother = input("Enter niftar's mother name: ")
+        rab = boolear(input("Is rab? (Y/N): "))
+        maroqai = boolear(input("Is maroqai? (Y/N): "))
+        day = input("Enter niftar's day of ptira: ")
+        month = input("Enter niftar's month of ptira: ")
+        year = input("Enter niftar's year of ptira: ")
+        theNiftar = Niftar(name, male, mother, maroqai, rab, day, month, year)
+        magic()
+        
+def magic():
+    #verifying if there is allready a copied folder of xmls
+    if exists('TempoXMLs'):
+        shutil.rmtree(os.getcwd()+'/TempoXMLs')
+        time.sleep(delay)
+    #copying xmls folder
+    shutil.copytree('modificative', 'TempoXMLs')
+    time.sleep(delay)
 
-if debug :
-    theNiftar = Niftar("אהרן", True, "יוכבד", False, False, "א'", 'אב', 'ב`תפ"ז')
-else:
-    name = input("Enter niftar's name: ")
-    male = boolear(input("Is male? (Y/N): "))
-    mother = input("Enter niftar's mother name: ")
-    rab = boolear(input("Is rab? (Y/N): "))
-    maroqai = boolear(input("Is maroqai? (Y/N): "))
-    day = input("Enter niftar's day of ptira: ")
-    month = input("Enter niftar's month of ptira: ")
-    year = input("Enter niftar's year of ptira: ")
-    theNiftar = Niftar(name, male, mother, maroqai, rab, day, month, year)
+    # HERE the magic should happend --->
 
-#verifying if there is allready a copied folder of xmls
-if exists('TempoXMLs'):
+    # Read in the file
+    with open('TempoXMLs/word/document.xml', 'r', encoding="utf8") as file :
+        filedata = file.read()
+
+    # writing letters capital 119 sequence by full name & Replace the target string in the main document
+    filedata = filedata.replace('{{LETTERS}}', nameLetterSq(theNiftar.fullName))
+    # modifinig the hashcabha block by name and picking it by sex & Inserting it
+    filedata = filedata.replace('{{HAXCABH}}', haxcaba(theNiftar))
+    # getting the right block
+    filedata = filedata.replace('{{MRQY}}', isMrq(theNiftar))
+
+    # - Now the Header -
+    with open('TempoXMLs/word/header1.xml', 'r', encoding="utf8") as hFile :
+        fData = hFile.read()
+    # full (rab) name
+    fData = fData.replace('{{DATE}}', theNiftar.fullRabName)
+    # his/her date
+    fData = fData.replace('{{NAME}}', theNiftar.fullDate)
+    # Write the file out again
+    with open('TempoXMLs/word/document.xml', 'w', encoding="utf8"
+            ) as file:
+        file.write(filedata)
+
+    with open('TempoXMLs/word/header1.xml', 'w', encoding="utf8"
+            ) as hFile:
+        hFile.write(fData)
+
+    # <--- End of modifiactions
+
+    #zipping new cpied docx xsmls folder
+    shutil.make_archive('newDocx', 'zip', 'TempoXMLs')
+    time.sleep(delay)
+    #removing folder
     shutil.rmtree(os.getcwd()+'/TempoXMLs')
     time.sleep(delay)
-#copying xmls folder
-shutil.copytree('modificative', 'TempoXMLs')
-time.sleep(delay)
+    #verifying if there is allready a modified docx file
+    if exists('newDocx.docx'):
+        os.remove('newDocx.docx')
+        time.sleep(delay)
+    #renaming zip file back to a docx file
+    os.rename('newDocx.zip','newDocx.docx')
 
-# HERE the magic should happend --->
+if not cli:
+    # Event Loop to process "events" and get the "values" of the inputs
+    while True:
+        event, values = window.read()
+        if event == sg.WIN_CLOSED or event == 'ביטול': # if user closes window or clicks cancel
+            break
+        # print("Niftar's name ", values[0])
+        # print("Is male? ", values["male"])
+        # print("Is female? ", values["female"])
+        # print("Niftar's mother name ", values[1])
+        # print("rab ", values[2])
+        # print("maroqo ", values[3])
+        # print("year ", values[4])
+        # print("month ", values[5])
+        # print("day ", values[6])
+        theNiftar = Niftar(values[0], values["male"], values[1], values[3], values[2], values[6], values[5], values[4])
+        magic()
 
-# Read in the file
-with open('TempoXMLs/word/document.xml', 'r', encoding="utf8") as file :
-  filedata = file.read()
-
-# writing letters capital 119 sequence by full name & Replace the target string in the main document
-filedata = filedata.replace('{{LETTERS}}', nameLetterSq(theNiftar.fullName))
-# modifinig the hashcabha block by name and picking it by sex & Inserting it
-filedata = filedata.replace('{{HAXCABH}}', haxcaba(theNiftar))
-# getting the right block
-filedata = filedata.replace('{{MRQY}}', isMrq(theNiftar))
-
-# - Now the Header -
-with open('TempoXMLs/word/header1.xml', 'r', encoding="utf8") as hFile :
-  fData = hFile.read()
-# full (rab) name
-fData = fData.replace('{{DATE}}', theNiftar.fullRabName)
-# his/her date
-fData = fData.replace('{{NAME}}', theNiftar.fullDate)
-# Write the file out again
-with open('TempoXMLs/word/document.xml', 'w', encoding="utf8"
-          ) as file:
-  file.write(filedata)
-
-with open('TempoXMLs/word/header1.xml', 'w', encoding="utf8"
-          ) as hFile:
-  hFile.write(fData)
-
-# <--- End of modifiactions
-
-#zipping new cpied docx xsmls folder
-shutil.make_archive('newDocx', 'zip', 'TempoXMLs')
-time.sleep(delay)
-#removing folder
-shutil.rmtree(os.getcwd()+'/TempoXMLs')
-time.sleep(delay)
-#verifying if there is allready a modified docx file
-if exists('newDocx.docx'):
-    os.remove('newDocx.docx')
-    time.sleep(delay)
-#renaming zip file back to a docx file
-os.rename('newDocx.zip','newDocx.docx')
-input("-<[ ENTER TO EXIT ]>-")
+    window.close()
+else:
+    input("-<[ ENTER TO EXIT ]>-")
