@@ -5,7 +5,6 @@ from os.path import exists
 import fileinput
 import sys
 import PySimpleGUIQt as sg
-
 # getting the hebrew years and months from files
 with open('modification parts/years.txt', 'r', encoding="utf8") as file:
     YEARS = file.read()
@@ -18,10 +17,11 @@ layout = [  [sg.InputText(), sg.Text('שם הנפטר/ת:')],
             [sg.InputText(), sg.Text('שם אמו/ה:')],
             [sg.Checkbox('רב/נית'), sg.Checkbox('מרוקאי/ת')],
             [sg.Combo(YEARS.split(',')),sg.Combo(MONTHS.replace('"','').replace('\n','').split(',')),sg.Combo(YEARS.split(',')[:30])],
+            [sg.FolderBrowse('בחר תקיית יעד לשמירת הקובץ', key='targetDir')],
             [sg.Button('אישור'), sg.Button('ביטול')] ]
 
 # Create the Window with a title a text modificatin and an icon
-window = sg.Window('השכבה', layout, text_justification="right", icon='modification parts/qyt.ico')
+window = sg.Window('השכבה | לעילוי נשמת עמוס פרץ בן מז`לה (מזל)', layout, text_justification="right", icon='modification parts/rCandle.ico')
 
 
 #variables
@@ -54,6 +54,7 @@ class Niftar:
         self.fullDate = day + ' ב' + month + ' ' + year
         self.fullRabName = self.rabText + ' ' + name + ' ' + self.sexText + ' ' + mother
         self.fullName = name + ' ' + self.sexText + ' ' + mother
+        self.info = self.fullRabName + ', תאריך פטירה: ' + self.fullDate
 # -- functions --
 # arrange letters blocks from full niftar's name's letters
 def nameLetterSq(strLtrs):
@@ -188,7 +189,7 @@ if cli:
         theNiftar = Niftar(name, male, mother, maroqai, rab, day, month, year)
         magic()
         
-def magic():
+def magic(dirToSaveAt):
     #verifying if there is allready a copied folder of xmls
     if exists('TempoXMLs'):
         shutil.rmtree(os.getcwd()+'/TempoXMLs')
@@ -239,7 +240,15 @@ def magic():
         os.remove('newDocx.docx')
         time.sleep(delay)
     #renaming zip file back to a docx file
-    os.rename('newDocx.zip','newDocx.docx')
+    if dirToSaveAt is None:
+        if os.name == 'nt':
+            dirToSaveAt = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop')
+        elif os.name == 'posix':
+            dirToSaveAt = os.path.join(os.path.join(os.path.expanduser('~')), 'Desktop') 
+        else:
+            dirToSaveAt = ''
+    dst = theNiftar.fullRabName+".docx"
+    os.rename('newDocx.zip',dirToSaveAt+'/'+dst)
 
 if not cli:
     # Event Loop to process "events" and get the "values" of the inputs
@@ -257,7 +266,7 @@ if not cli:
         # print("month ", values[5])
         # print("day ", values[6])
         theNiftar = Niftar(values[0], values["male"], values[1], values[3], values[2], values[6], values[5], values[4])
-        magic()
+        magic(values['targetDir'])
 
     window.close()
 else:
