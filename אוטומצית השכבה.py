@@ -5,29 +5,20 @@ from os.path import exists
 import fileinput
 import sys
 import PySimpleGUIQt as sg
+import pickle
+
 # getting the hebrew years and months from files
 with open('modification parts/years.txt', 'r', encoding="utf8") as file:
     YEARS = file.read()
 with open('modification parts/months.txt', 'r', encoding="utf8") as file:
     MONTHS = file.read()
-sg.theme('Black')   # Add a touch of color
-# All the stuff inside the window.
-layout = [  [sg.InputText(), sg.Text('שם הנפטר/ת:')],
-            [sg.Radio('בן', "sex", key='male', default=True), sg.Radio('בת', "sex", key='female')],
-            [sg.InputText(), sg.Text('שם אמו/ה:')],
-            [sg.Checkbox('רב/נית'), sg.Checkbox('מרוקאי/ת')],
-            [sg.Combo(YEARS.split(',')),sg.Combo(MONTHS.replace('"','').replace('\n','').split(',')),sg.Combo(YEARS.split(',')[:30])],
-            [sg.FolderBrowse('בחר תקיית יעד לשמירת הקובץ', key='targetDir')],
-            [sg.Button('אישור'), sg.Button('ביטול')] ]
-
-# Create the Window with a title a text modificatin and an icon
-window = sg.Window('השכבה | לעילוי נשמת עמוס פרץ בן מז`לה (מזל)', layout, text_justification="right", icon='modification parts/rCandle.ico')
-
 
 #variables
 delay = 0.05
 debug = False
 cli = False
+niftarimDir = 'niftarim.bin'
+
 
 #niftar object
 class Niftar:
@@ -47,6 +38,13 @@ class Niftar:
                 self.rabText = 'הרבנית'
         else:
             self.rabText = ''
+        if maroqai:
+            if male:
+                self.mrqTxt = 'המרוקאי'
+            else:
+                self.mrqTxt = 'המרוקאית'
+        else:
+            self.mrqTxt = ''
         if male:
             self.sexText = 'בן'
         else:
@@ -54,8 +52,53 @@ class Niftar:
         self.fullDate = day + ' ב' + month + ' ' + year
         self.fullRabName = self.rabText + ' ' + name + ' ' + self.sexText + ' ' + mother
         self.fullName = name + ' ' + self.sexText + ' ' + mother
-        self.info = self.fullRabName + ', תאריך פטירה: ' + self.fullDate
+        self.info = self.fullRabName + ' ' + self.mrqTxt + ', תאריך פטירה: ' + self.fullDate
 # -- functions --
+
+# func 4 getting niftrim from file
+def getNiftarim(varo):
+    if varo == 'fullRabName':
+        # checks if it isn't the first time if so gets the objects and returning them
+        if exists(niftarimDir):
+            with open(niftarimDir, 'rb') as f:
+                listOrOne = pickle.load(f)
+                if isinstance(listOrOne, list):
+                    x = []
+                    for w in listOrOne:
+                        x = x + [w.fullRabName]
+                    return x
+                else:
+                    return listOrOne.fullRabName
+        else:
+            return 'no'
+    elif varo == 'obj':
+        # checks if it isn't the first time if so gets the objects and returning them
+        if exists(niftarimDir):
+            with open(niftarimDir, 'rb') as f:
+                listOrOne = pickle.load(f)
+                return listOrOne
+        else:
+            return 'no'
+
+# func 4 writing a niftar's object to file
+def writeNiftar(niftar):
+    # if it isn't the 1st time it uses the get func
+    if exists(niftarimDir):
+        niftarimList = getNiftarim('obj')
+        # if there isn't more than one object
+        if not isinstance(niftarimList, list):
+            # it inserts the one niftar to be in a list
+            niftarimList = list([niftarimList])
+        # now it adds the new niftar to the list from the file
+        niftarimList = niftarimList + [niftar]
+        # eventually writes the merged list to the file
+        with open(niftarimDir, 'wb') as f:
+            pickle.dump(niftarimList, f)
+    else:
+        # it's the 1st time so it writes it without reading
+        with open(niftarimDir, 'wb') as f:
+            pickle.dump(niftar, f)
+
 # arrange letters blocks from full niftar's name's letters
 def nameLetterSq(strLtrs):
     # letters dictionary for storing the letters blocks within an accessible storage
@@ -251,6 +294,28 @@ def magic(dirToSaveAt):
     os.rename('newDocx.zip',dirToSaveAt+'/'+dst)
 
 if not cli:
+    theNiftarim = getNiftarim('obj')
+    niftarimList = getNiftarim('fullRabName')
+    if theNiftarim == 'no':
+        niftarimList = ['אין נפטרים ברשימה']
+    elif isinstance(theNiftarim, list):
+        niftarimList = ['הוסף נפטר חדש'] + niftarimList
+    else:
+        niftarimList = ['הוסף נפטר חדש'] + [niftarimList]
+    sg.theme('Black')   # Add a touch of color
+    # All the stuff inside the window.
+    layout = [  [sg.InputText(), sg.Text('שם הנפטר/ת:')],
+                [sg.Radio('בן', "sex", key='male', default=True), sg.Radio('בת', "sex", key='female')],
+                [sg.InputText(), sg.Text('שם אמו/ה:')],
+                [sg.Checkbox('רב/נית'), sg.Checkbox('מרוקאי/ת')],
+                [sg.Combo(YEARS.split(',')),sg.Combo(MONTHS.replace('"','').replace('\n','').split(',')),sg.Combo(YEARS.split(',')[:30])],
+                [sg.Combo(niftarimList)],
+                [sg.FolderBrowse('בחר תקיית יעד לשמירת הקובץ', key='targetDir')],
+                [sg.Button('אישור'), sg.Button('ביטול')] ]
+
+    # Create the Window with a title a text modificatin and an icon
+    window = sg.Window('השכבה | לעילוי נשמת עמוס פרץ בן מז`לה (מזל)', layout, text_justification="right", icon='modification parts/rCandle.ico')
+    
     # Event Loop to process "events" and get the "values" of the inputs
     while True:
         event, values = window.read()
@@ -265,7 +330,14 @@ if not cli:
         # print("year ", values[4])
         # print("month ", values[5])
         # print("day ", values[6])
-        theNiftar = Niftar(values[0], values["male"], values[1], values[3], values[2], values[6], values[5], values[4])
+        if values[7] == 'אין נפטרים ברשימה' or values[7] == 'הוסף נפטר חדש':
+            theNiftar = Niftar(values[0], values["male"], values[1], values[3], values[2], values[6], values[5], values[4])
+            writeNiftar(theNiftar)
+        else:
+            if isinstance(theNiftarim, list):
+                theNiftar = theNiftarim[(niftarimList.index(values[7]))-1]
+            else:
+                theNiftar = theNiftarim
         magic(values['targetDir'])
 
     window.close()
