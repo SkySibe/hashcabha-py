@@ -7,6 +7,7 @@ import sys
 import PySimpleGUIQt as sg
 import pickle
 import ctypes, sys
+
 # TODO: check if it rund from exe or py
 def is_admin():
     try:
@@ -22,9 +23,9 @@ if not is_admin():
         ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv[1:]), None, 1)
 
 # getting the hebrew years and months from files
-with open('modification parts/years.txt', 'r', encoding="utf8") as file:
+with open('files/modification parts/years.txt', 'r', encoding="utf8") as file:
     YEARS = file.read()
-with open('modification parts/months.txt', 'r', encoding="utf8") as file:
+with open('files/modification parts/months.txt', 'r', encoding="utf8") as file:
     MONTHS = file.read()
 
 #variables
@@ -32,7 +33,6 @@ delay = 0.05
 debug = False
 cli = False
 niftarimDir = 'niftarim.bin'
-
 
 #niftar object
 class Niftar:
@@ -118,13 +118,13 @@ def nameLetterSq(strLtrs):
     # letters dictionary for storing the letters blocks within an accessible storage
     letters = {}
     # getting empty line block for separiding letters blocks
-    with open('modification parts/emptyLine.xml', 'r', encoding="utf8") as file:
+    with open('files/modification parts/emptyLine.xml', 'r', encoding="utf8") as file:
         EMPTYLINE = file.read().replace('\n', '')
     # letters blocks files into letters blocks dictionary
     # for over the letters blocks files
-    for x in os.listdir('modification parts/letters'):
+    for x in os.listdir('files/modification parts/letters'):
         # open them
-        with open('modification parts/letters/'+x, 'r', encoding="utf8") as file:
+        with open('files/modification parts/letters/'+x, 'r', encoding="utf8") as file:
             # saving file context (a block) to letters dictionary with key name like the file name but uppercase and without the file type
             letters[x.split('.', 1)[0].upper()] = file.read().replace('\n','')
     # variable for storing the blocks by name "building"
@@ -206,11 +206,11 @@ def nameLetterSq(strLtrs):
 def haxcaba(nftr):
     if nftr.male:
         # getting hashcabha block for modificating and returning it
-        with open('modification parts/hascabaLben.xml', 'r', encoding="utf8") as file:
+        with open('files/modification parts/hascabaLben.xml', 'r', encoding="utf8") as file:
             HASHCABHA = file.read().replace('\n', '')
     else:
         # getting hashcabha block for modificating and returning it
-        with open('modification parts/hascabaLbat.xml', 'r', encoding="utf8") as file:
+        with open('files/modification parts/hascabaLbat.xml', 'r', encoding="utf8") as file:
             HASHCABHA = file.read().replace('\n', '')
     HASHCABHA = HASHCABHA.replace('{{NAME}}', nftr.fullRabName)
     return HASHCABHA
@@ -224,10 +224,10 @@ def boolear(yesOrNo):
 # returning the suitable block if sefaradi or maroqai
 def isMrq(nftr):
     if nftr.maroqai:
-        with open('modification parts/mroqaiQraStn.xml', 'r', encoding="utf8") as file:
+        with open('files/modification parts/mroqaiQraStn.xml', 'r', encoding="utf8") as file:
             PART = file.read().replace('\n', '')
     else:
-        with open('modification parts/sfradiNesama.xml', 'r', encoding="utf8") as file:
+        with open('files/modification parts/sfradiNesama.xml', 'r', encoding="utf8") as file:
             PART = file.read().replace('\n', '')
     return PART
 if cli:
@@ -252,7 +252,7 @@ def magic(dirToSaveAt):
         shutil.rmtree(os.getcwd()+'/TempoXMLs')
         time.sleep(delay)
     #copying xmls folder
-    shutil.copytree('modificative', 'TempoXMLs')
+    shutil.copytree('files/modificative', 'TempoXMLs')
     time.sleep(delay)
 
     # HERE the magic should happend --->
@@ -328,22 +328,13 @@ if not cli:
                 [sg.Button('אישור'), sg.Button('ביטול')] ]
 
     # Create the Window with a title a text modificatin and an icon
-    window = sg.Window('השכבה | לעילוי נשמת עמוס פרץ בן מז`לה (מזל)', layout, text_justification="right", icon='modification parts/candleT.ico')
+    window = sg.Window('השכבה | לעילוי נשמת עמוס פרץ בן מז`לה (מזל)', layout, text_justification="right", icon='files/images/candleT.ico')
     
     # Event Loop to process "events" and get the "values" of the inputs
     while True:
         event, values = window.read()
         if event == sg.WIN_CLOSED or event == 'ביטול': # if user closes window or clicks cancel
             break
-        # print("Niftar's name ", values[0])
-        # print("Is male? ", values["male"])
-        # print("Is female? ", values["female"])
-        # print("Niftar's mother name ", values[1])
-        # print("rab ", values[2])
-        # print("maroqo ", values[3])
-        # print("year ", values[4])
-        # print("month ", values[5])
-        # print("day ", values[6])
         if values[7] == 'אין נפטרים ברשימה' or values[7] == 'הוסף נפטר חדש':
             theNiftar = Niftar(values[0], values["male"], values[1], values[3], values[2], values[6], values[5], values[4])
             writeNiftar(theNiftar)
