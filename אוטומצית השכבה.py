@@ -6,6 +6,20 @@ import fileinput
 import sys
 import PySimpleGUIQt as sg
 import pickle
+import ctypes, sys
+# TODO: check if it rund from exe or py
+def is_admin():
+    try:
+        return ctypes.windll.shell32.IsUserAnAdmin()
+    except:
+        return False
+
+if not is_admin():
+    # Re-run the program with admin rights
+    if sys.argv[1:] == []:
+        ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
+    else:
+        ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv[1:]), None, 1)
 
 # getting the hebrew years and months from files
 with open('modification parts/years.txt', 'r', encoding="utf8") as file:
@@ -314,7 +328,7 @@ if not cli:
                 [sg.Button('אישור'), sg.Button('ביטול')] ]
 
     # Create the Window with a title a text modificatin and an icon
-    window = sg.Window('השכבה | לעילוי נשמת עמוס פרץ בן מז`לה (מזל)', layout, text_justification="right", icon='modification parts/rCandle.ico')
+    window = sg.Window('השכבה | לעילוי נשמת עמוס פרץ בן מז`לה (מזל)', layout, text_justification="right", icon='modification parts/candleT.ico')
     
     # Event Loop to process "events" and get the "values" of the inputs
     while True:
