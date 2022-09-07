@@ -159,7 +159,7 @@ def nameLetterSq(strLtrs):
     # variable for storing the blocks by name "building"
     nameSq = ''
     # for loop the full name's letters
-    for i in strLtrs:
+    for index,i in enumerate(strLtrs):
         # match a letter from name
         match i:
             # attaching letter block to the building variable with an empty line block after it
@@ -275,7 +275,7 @@ if cli:
         theNiftar = Niftar(name, male, mother, maroqai, rab, day, month, year)
         magic('./',True,True)
         
-def magic(dirToSaveAt,wordT,pdfT):
+def magic(dirFromInput,wordT,pdfT):
     #verifying if there is allready a copied folder of xmls
     if exists('TempoXMLs'):
         shutil.rmtree(os.getcwd()+'/TempoXMLs')
@@ -325,45 +325,45 @@ def magic(dirToSaveAt,wordT,pdfT):
     if exists('newDocx.docx'):
         os.remove('newDocx.docx')
         time.sleep(delay)
-    #renaming zip file back to a docx file
-    if dirToSaveAt is None:
-        if dirToSave is None:
-            if os.name == 'nt':
-                dirToSaveAt = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop')
-            elif os.name == 'posix':
-                dirToSaveAt = os.path.join(os.path.join(os.path.expanduser('~')), 'Desktop') 
-            else:
-                dirToSaveAt = ''
+    
+    # is didn't got a path from the user setting it to the Desktop as defaultd
+    if dirFromInput is None or dirFromInput == 'None':
+        # by OS
+        if os.name == 'nt':
+            dirFromInput = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop')
+        elif os.name == 'posix':
+            dirFromInput = os.path.join(os.path.join(os.path.expanduser('~')), 'Desktop') 
         else:
-            dirToSaveAt = dirToSave
+            dirFromInput = ''
+    #renaming zip file back to a docx file
     dst = theNiftar.fullRabName
-    if exists(dirToSaveAt+'/'+dst+".docx"):
+    if exists(dirFromInput+'/'+dst+".docx"):
+        # if there's alrady file named the same asking the use for a name
         inFromUser = getInput('שמור בשם','  קובץ באותו בשם כבר קיים \n אפשר לבחור לו שם או לבטל',theNiftar.fullRabName)
         if inFromUser == None:
             sg.Popup('לא נשמר קובץ',title="פרשת דרכים",background_color='black',button_color=('white', '#5555ff'),custom_text='אישור')
         else:
-            # TODO prevent error file name speciel charts enter same name and so
             for i in INVALID_FILE_CHARTERS:
-                inFromUser = inFromUser.replace(i,"")
+                inFromUser = inFromUser.replace(i,"") # removing invalid chartres that can't be saved as file on wndows
             x = 1
-            while exists(dirToSaveAt+'/'+inFromUser+".docx"):
+            while exists(dirFromInput+'/'+inFromUser+".docx"): # adding number to the name if user didn't renamed the file
                 if x > 1:
                     inFromUser =inFromUser[:-1]
                 print(inFromUser,inFromUser[:-1])
                 print(x)
                 inFromUser = inFromUser + str(x)
                 x = x + 1
-            os.rename('newDocx.zip',dirToSaveAt+'/'+inFromUser+".docx")
+            os.rename('newDocx.zip',dirFromInput+'/'+inFromUser+".docx")
             if pdfT:
-                convert(dirToSaveAt+'/'+inFromUser+".docx",dirToSaveAt+'/'+inFromUser+".pdf")
+                convert(dirFromInput+'/'+inFromUser+".docx",dirFromInput+'/'+inFromUser+".pdf") # coverting the docx file to a pdf
             if not wordT:
-                os.remove(dirToSaveAt+'/'+inFromUser+".docx")
+                os.remove(dirFromInput+'/'+inFromUser+".docx") # removes the docx file if the user didn't marked it
     else:
-        os.rename('newDocx.zip',dirToSaveAt+'/'+dst+".docx")
+        os.rename('newDocx.zip',dirFromInput+'/'+dst+".docx")
         if pdfT:
-            convert(dirToSaveAt+'/'+dst+".docx",dirToSaveAt+'/'+dst+".pdf")
+            convert(dirFromInput+'/'+dst+".docx",dirFromInput+'/'+dst+".pdf")
         if not wordT:
-            os.remove(dirToSaveAt+'/'+dst+".docx")
+            os.remove(dirFromInput+'/'+dst+".docx")
 
 if not cli:
     theNiftarim = getNiftarim('obj')
@@ -379,11 +379,11 @@ if not cli:
     if exists(settingsFile):
         word = config.getboolean('settings', 'Word')
         pdf = config.getboolean('settings', 'PDF')
-        dirToSave = config.get('settings', 'DTS')
+        dirFromCookie = config.get('settings', 'DTS')
     else:
         word = True
         pdf = False
-        dirToSave = None
+        dirFromCookie = None
         config.add_section('settings')
     years = YEARS.split(',')
     months = MONTHS.replace('"','').replace('\n','').split(',')
@@ -395,7 +395,7 @@ if not cli:
                 [sg.Checkbox('רב/נית'), sg.Checkbox('מרוקאי/ת')],
                 [sg.Combo(years, default_value=years[int(heDate[0])-5001], readonly=True),sg.Combo(months, default_value=months[int(heDate[1])-1], readonly=True),sg.Combo(days,default_value=days[int(heDate[2])-1], readonly=True)],
                 [sg.Combo(niftarimList, readonly=True)],
-                [sg.FolderBrowse('בחר תקיית יעד לשמירת הקובץ', initial_folder=dirToSave, key='targetDir')],
+                [sg.FolderBrowse('בחר תקיית יעד לשמירת הקובץ', initial_folder=dirFromCookie, key='targetDir')],
                 [sg.Checkbox('וורד', default=word), sg.Checkbox('פי.די.אף', default=pdf)],
                 [sg.Button('אישור'), sg.Button('ביטול')] ]
 
@@ -409,7 +409,14 @@ if not cli:
             break
         config.set('settings', 'Word', str(values[8]))
         config.set('settings', 'PDF', str(values[9]))
-        config.set('settings', 'DTS', str(values['targetDir']))
+        print(values['targetDir'])
+        if values['targetDir'] is not None:
+            dirFromCookie = values['targetDir']
+            config.set('settings', 'DTS', str(values['targetDir']))
+            print('save value from user')
+        elif dirFromCookie is None or dirFromCookie == 'None':
+            config.set('settings', 'DTS', str(None))
+            print('saves none')
         with open(settingsFile, 'w') as f:
             config.write(f)
         if values[7] == 'אין נפטרים ברשימה' or values[7] == 'הוסף נפטר חדש':
@@ -418,14 +425,14 @@ if not cli:
             if wn == 'Niftar is already exists':
                 outFromPU = sg.Popup('נפטר זה קיים ברשימה','האם ליצור לו קובץ בכל זאת?','(בלי לשמור אותו ברשימה שוב)',title="פרשת דרכים",background_color='black',button_color=('white', '#5555ff'),custom_text=('כן','לא'))
                 if 'כן':
-                    magic(values['targetDir'], values[8], values[9])
+                    magic(dirFromCookie, values[8], values[9])
         else:
             # How to treat the var as a sring or as a list?
             if isinstance(theNiftarim, list):
                 theNiftar = theNiftarim[(niftarimList.index(values[7]))-1]
             else:
                 theNiftar = theNiftarim
-            magic(values['targetDir'], values[8], values[9])
+            magic(dirFromCookie, values[8], values[9])
     window.close()
 else:
     input("-<[ ENTER TO EXIT ]>-")
