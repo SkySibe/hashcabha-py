@@ -8,6 +8,18 @@ import PySimpleGUIQt as sg
 import pickle
 import ctypes, sys
 from docx2pdf import convert
+from configparser import ConfigParser
+from pyluach import dates, hebrewcal, parshios
+
+#variables
+heDate = str(dates.HebrewDate.today()).split('-')
+config = ConfigParser()
+settingsFile = 'config.ini'
+delay = 0
+debug = False
+cli = False
+niftarimDir = 'niftarim.bin'
+INVALID_FILE_CHARTERS = '<>:"/\|?*'
 
 # function for getting input from the user
 def getInput(title,txt,dt):
@@ -43,13 +55,6 @@ with open('files/modification parts/years.txt', 'r', encoding="utf8") as file:
     YEARS = file.read()
 with open('files/modification parts/months.txt', 'r', encoding="utf8") as file:
     MONTHS = file.read()
-
-#variables
-delay = 0.05
-debug = False
-cli = False
-niftarimDir = 'niftarim.bin'
-INVALID_FILE_CHARTERS = '<>:"/\|?*'
 
 #niftar object
 class Niftar:
@@ -257,7 +262,7 @@ def isMrq(nftr):
 if cli:
     if debug :
         theNiftar = Niftar("אהרן", True, "יוכבד", False, False, "א'", 'אב', 'ב`תפ"ז')
-        magic()
+        magic('./',True,True)
     else:
         name = input("Enter niftar's name: ")
         male = boolear(input("Is male? (Y/N): "))
@@ -268,9 +273,9 @@ if cli:
         month = input("Enter niftar's month of ptira: ")
         year = input("Enter niftar's year of ptira: ")
         theNiftar = Niftar(name, male, mother, maroqai, rab, day, month, year)
-        magic()
+        magic('./',True,True)
         
-def magic(dirToSaveAt):
+def magic(dirToSaveAt,wordT,pdfT):
     #verifying if there is allready a copied folder of xmls
     if exists('TempoXMLs'):
         shutil.rmtree(os.getcwd()+'/TempoXMLs')
@@ -322,21 +327,17 @@ def magic(dirToSaveAt):
         time.sleep(delay)
     #renaming zip file back to a docx file
     if dirToSaveAt is None:
-        if os.name == 'nt':
-            dirToSaveAt = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop')
-        elif os.name == 'posix':
-            dirToSaveAt = os.path.join(os.path.join(os.path.expanduser('~')), 'Desktop') 
+        if dirToSave is None:
+            if os.name == 'nt':
+                dirToSaveAt = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop')
+            elif os.name == 'posix':
+                dirToSaveAt = os.path.join(os.path.join(os.path.expanduser('~')), 'Desktop') 
+            else:
+                dirToSaveAt = ''
         else:
-            dirToSaveAt = ''
-    dst = theNiftar.fullRabName+".docx"
-    dstLong = theNiftar.info+".docx"
-    dstLong = dstLong.replace("'","")
-    dstLong = dstLong.replace('"','')
-    dstLong = dstLong.replace(',','')
-    dstLong = dstLong.replace(':','')
-    if exists(dirToSaveAt+'/'+dst) and not exists(dirToSaveAt+'/'+dstLong):
-        os.rename('newDocx.zip',dirToSaveAt+'/'+dstLong)
-    elif exists(dirToSaveAt+'/'+dstLong):
+            dirToSaveAt = dirToSave
+    dst = theNiftar.fullRabName
+    if exists(dirToSaveAt+'/'+dst+".docx"):
         inFromUser = getInput('שמור בשם','  קובץ באותו בשם כבר קיים \n אפשר לבחור לו שם או לבטל',theNiftar.fullRabName)
         if inFromUser == None:
             sg.Popup('לא נשמר קובץ',title="פרשת דרכים",background_color='black',button_color=('white', '#5555ff'),custom_text='אישור')
@@ -353,9 +354,16 @@ def magic(dirToSaveAt):
                 inFromUser = inFromUser + str(x)
                 x = x + 1
             os.rename('newDocx.zip',dirToSaveAt+'/'+inFromUser+".docx")
-            
+            if pdfT:
+                convert(dirToSaveAt+'/'+inFromUser+".docx",dirToSaveAt+'/'+inFromUser+".pdf")
+            if not wordT:
+                os.remove(dirToSaveAt+'/'+inFromUser+".docx")
     else:
-        os.rename('newDocx.zip',dirToSaveAt+'/'+dst)
+        os.rename('newDocx.zip',dirToSaveAt+'/'+dst+".docx")
+        if pdfT:
+            convert(dirToSaveAt+'/'+dst+".docx",dirToSaveAt+'/'+dst+".pdf")
+        if not wordT:
+            os.remove(dirToSaveAt+'/'+dst+".docx")
 
 if not cli:
     theNiftarim = getNiftarim('obj')
@@ -367,14 +375,28 @@ if not cli:
     else:
         niftarimList = ['הוסף נפטר חדש'] + [niftarimList]
     sg.theme('Black')   # Add a touch of color
+    config.read(settingsFile)
+    if exists(settingsFile):
+        word = config.getboolean('settings', 'Word')
+        pdf = config.getboolean('settings', 'PDF')
+        dirToSave = config.get('settings', 'DTS')
+    else:
+        word = True
+        pdf = False
+        dirToSave = None
+        config.add_section('settings')
+    years = YEARS.split(',')
+    months = MONTHS.replace('"','').replace('\n','').split(',')
+    days = YEARS.split(',')[:30]
     # All the stuff inside the window.
     layout = [  [sg.InputText(), sg.Text('שם הנפטר/ת:')],
                 [sg.Radio('בן', "sex", key='male', default=True), sg.Radio('בת', "sex", key='female')],
                 [sg.InputText(), sg.Text('שם אמו/ה:')],
                 [sg.Checkbox('רב/נית'), sg.Checkbox('מרוקאי/ת')],
-                [sg.Combo(YEARS.split(',')),sg.Combo(MONTHS.replace('"','').replace('\n','').split(',')),sg.Combo(YEARS.split(',')[:30])],
-                [sg.Combo(niftarimList)],
-                [sg.FolderBrowse('בחר תקיית יעד לשמירת הקובץ', key='targetDir')],
+                [sg.Combo(years, default_value=years[int(heDate[0])-5001], readonly=True),sg.Combo(months, default_value=months[int(heDate[1])-1], readonly=True),sg.Combo(days,default_value=days[int(heDate[2])-1], readonly=True)],
+                [sg.Combo(niftarimList, readonly=True)],
+                [sg.FolderBrowse('בחר תקיית יעד לשמירת הקובץ', initial_folder=dirToSave, key='targetDir')],
+                [sg.Checkbox('וורד', default=word), sg.Checkbox('פי.די.אף', default=pdf)],
                 [sg.Button('אישור'), sg.Button('ביטול')] ]
 
     # Create the Window with a title a text modificatin and an icon
@@ -385,22 +407,25 @@ if not cli:
         event, values = window.read()
         if event == sg.WIN_CLOSED or event == 'ביטול': # if user closes window or clicks cancel
             break
+        config.set('settings', 'Word', str(values[8]))
+        config.set('settings', 'PDF', str(values[9]))
+        config.set('settings', 'DTS', str(values['targetDir']))
+        with open(settingsFile, 'w') as f:
+            config.write(f)
         if values[7] == 'אין נפטרים ברשימה' or values[7] == 'הוסף נפטר חדש':
             theNiftar = Niftar(values[0], values["male"], values[1], values[3], values[2], values[6], values[5], values[4])
             wn = writeNiftar(theNiftar)
             if wn == 'Niftar is already exists':
                 outFromPU = sg.Popup('נפטר זה קיים ברשימה','האם ליצור לו קובץ בכל זאת?','(בלי לשמור אותו ברשימה שוב)',title="פרשת דרכים",background_color='black',button_color=('white', '#5555ff'),custom_text=('כן','לא'))
                 if 'כן':
-                    magic(values['targetDir'])
+                    magic(values['targetDir'], values[8], values[9])
         else:
             # How to treat the var as a sring or as a list?
             if isinstance(theNiftarim, list):
                 theNiftar = theNiftarim[(niftarimList.index(values[7]))-1]
             else:
                 theNiftar = theNiftarim
-            magic(values['targetDir'])
-        
-
+            magic(values['targetDir'], values[8], values[9])
     window.close()
 else:
     input("-<[ ENTER TO EXIT ]>-")
