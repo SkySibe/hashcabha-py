@@ -62,26 +62,6 @@
             </w:pPr>
         </w:p>
         {{LETTERS}}
-        <w:p w:rsidR="001F5473" w:rsidRDefault="001F5473">
-            <w:pPr>
-                <w:jc w:val="both" />
-                <w:rPr>
-                    <w:rFonts w:cs="David" />
-                    <w:sz w:val="10" />
-                    <w:szCs w:val="12" />
-                </w:rPr>
-            </w:pPr>
-        </w:p>
-        <w:p w:rsidR="00B50827" w:rsidRDefault="00B50827" w:rsidP="00B50827">
-            <w:pPr>
-                <w:pStyle w:val="a4" />
-                <w:spacing w:line="240" w:lineRule="auto" />
-                <w:rPr>
-                    <w:rFonts w:cs="David" />
-                    <w:rtl />
-                </w:rPr>
-            </w:pPr>
-        </w:p>
         {{MRQY}}
         <w:p w:rsidR="001F5473" w:rsidRDefault="001F5473">
             <w:pPr>
@@ -90,27 +70,6 @@
                     <w:rFonts w:cs="David" />
                     <w:sz w:val="10" />
                     <w:szCs w:val="12" />
-                </w:rPr>
-            </w:pPr>
-        </w:p>
-        <w:p w:rsidR="00B50827" w:rsidRDefault="00B50827" w:rsidP="00B50827">
-            <w:pPr>
-                <w:pStyle w:val="a4" />
-                <w:spacing w:line="240" w:lineRule="auto" />
-                <w:rPr>
-                    <w:rFonts w:cs="David" />
-                    <w:rtl />
-                </w:rPr>
-            </w:pPr>
-        </w:p>
-        <w:p w:rsidR="001F5473" w:rsidRDefault="001F5473">
-            <w:pPr>
-                <w:jc w:val="both" />
-                <w:rPr>
-                    <w:rFonts w:cs="David" />
-                    <w:sz w:val="10" />
-                    <w:szCs w:val="12" />
-                    <w:rtl />
                 </w:rPr>
             </w:pPr>
         </w:p>
