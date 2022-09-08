@@ -36,19 +36,6 @@ def getInput(title,txt,dt):
             return values['_INPUT_']
         break
     windowTextIn.close()
-# function to check if runs from admin
-def is_admin():
-    try:
-        return ctypes.windll.shell32.IsUserAnAdmin()
-    except:
-        return False
-
-if not is_admin():
-    # Re-run the program with admin rights
-    if sys.argv[1:] == []:
-        ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
-    else:
-        ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv[1:]), None, 1)
 
 # getting the hebrew years and months from files
 with open('files/modification parts/years.txt', 'r', encoding="utf8") as file:
@@ -409,23 +396,22 @@ if not cli:
             break
         config.set('settings', 'Word', str(values[8]))
         config.set('settings', 'PDF', str(values[9]))
-        print(values['targetDir'])
         if values['targetDir'] is not None:
             dirFromCookie = values['targetDir']
-            config.set('settings', 'DTS', str(values['targetDir']))
-            print('save value from user')
+            config.set('settings', 'DTS', str(dirFromCookie))
         elif dirFromCookie is None or dirFromCookie == 'None':
             config.set('settings', 'DTS', str(None))
-            print('saves none')
         with open(settingsFile, 'w') as f:
             config.write(f)
         if values[7] == 'אין נפטרים ברשימה' or values[7] == 'הוסף נפטר חדש':
             theNiftar = Niftar(values[0], values["male"], values[1], values[3], values[2], values[6], values[5], values[4])
-            wn = writeNiftar(theNiftar)
-            if wn == 'Niftar is already exists':
+            wn = writeNiftar(theNiftar) # trying to write the new niftar to the niftarim.bin file
+            if wn == 'Niftar is already exists': # if it's exists it asks the user if he wants to create the file anyways
                 outFromPU = sg.Popup('נפטר זה קיים ברשימה','האם ליצור לו קובץ בכל זאת?','(בלי לשמור אותו ברשימה שוב)',title="פרשת דרכים",background_color='black',button_color=('white', '#5555ff'),custom_text=('כן','לא'))
                 if 'כן':
                     magic(dirFromCookie, values[8], values[9])
+            else:
+                magic(dirFromCookie, values[8], values[9])
         else:
             # How to treat the var as a sring or as a list?
             if isinstance(theNiftarim, list):
