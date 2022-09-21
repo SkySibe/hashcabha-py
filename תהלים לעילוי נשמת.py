@@ -292,6 +292,9 @@ def isMrq(nftr):
     return PART
         
 def magic(dirFromInput,wordT,pdfT,launchAfterCreating):
+    # lenOfNameSq = len(theNiftar.fullName)
+    # match :
+    #     case >
     #verifying if there is allready a copied folder of xmls
     if exists('TempoXMLs'):
         shutil.rmtree(os.getcwd()+'/TempoXMLs')
