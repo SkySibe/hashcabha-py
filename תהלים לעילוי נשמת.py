@@ -66,9 +66,9 @@ def getInput(title,txt,dt):
     windowTextIn.close()
 
 # getting the hebrew years and months from files
-with open('files/modification parts/years.txt', 'r', encoding="utf8") as file:
+with open('files/modification parts/years.xml', 'r', encoding="utf8") as file:
     YEARS = file.read()
-with open('files/modification parts/months.txt', 'r', encoding="utf8") as file:
+with open('files/modification parts/months.xml', 'r', encoding="utf8") as file:
     MONTHS = file.read()
 
 #niftar object
@@ -112,10 +112,13 @@ class Niftar:
         else:
             self.sexText = 'בת'
         self.fullDate = day + ' ב' + month + ' ' + year
-        self.nameWlast = self.name + ' (' + self.lastName + ') '
-        self.fullRabNameWithLastName = self.rabText + self.nameWlast + self.sexText + ' ' + mother
-        self.fullRabName = self.rabText + self.name + ' ' + self.sexText + ' ' + mother
-        self.fullName = self.name + ' ' + self.sexText + ' ' + mother
+        if len(self.lastName) <= 0:
+            self.nameWlast = self.name + ' ' + self.lastName
+        else:
+            self.nameWlast = self.name + ' (' + self.lastName + ') '
+        self.fullRabNameWithLastName = self.rabText + self.nameWlast + self.sexText + ' ' + self.mother
+        self.fullRabName = self.rabText + self.name + ' ' + self.sexText + ' ' + self.mother
+        self.fullName = self.name + ' ' + self.sexText + ' ' + self.mother
         self.info = self.fullRabNameWithLastName + ' ' + self.mrqTxt + ', תאריך פטירה: ' + self.fullDate
 # -- functions --
 
@@ -174,12 +177,16 @@ def writeNiftar(niftar):
             pickle.dump(niftar, f)
 
 # arrange letters blocks from full niftar's name's letters
-def nameLetterSq(strLtrs):
+def nameLetterSq(strLtrs, smallerEmptyLine):
     # letters dictionary for storing the letters blocks within an accessible storage
     letters = {}
     # getting empty line block for separiding letters blocks
-    with open('files/modification parts/emptyLine.xml', 'r', encoding="utf8") as file:
-        EMPTYLINE = file.read().replace('\n', '')
+    if smallerEmptyLine:
+        with open('files/modification parts/emptyLineSmaller.xml', 'r', encoding="utf8") as file:
+            EMPTYLINE = file.read().replace('\n', '')
+    else:
+        with open('files/modification parts/emptyLine.xml', 'r', encoding="utf8") as file:
+            EMPTYLINE = file.read().replace('\n', '')
     # letters blocks files into letters blocks dictionary
     # for over the letters blocks files
     for x in os.listdir('files/modification parts/letters'):
@@ -290,11 +297,27 @@ def isMrq(nftr):
         with open('files/modification parts/sfradiNesama.xml', 'r', encoding="utf8") as file:
             PART = file.read().replace('\n', '')
     return PART
-        
-def magic(dirFromInput,wordT,pdfT,launchAfterCreating):
-    # lenOfNameSq = len(theNiftar.fullName)
-    # match :
-    #     case >
+
+# def shrink(docFile, newLine, haxcabaBless, qadix, margins, bigSpace, smallSpace, yoxBstrElion):
+#     if haxcabaBless:
+#         hFile = open('files/modification parts/cementeryBlessSmall.xml', 'r', encoding="utf8")
+#     else:
+#         hFile = open('files/modification parts/cementeryBlessBig.xml', 'r', encoding="utf8")
+#     docFile = docFile.replace('{{CBLESS}}', hFile.read())
+    
+#     with open('files/modification parts/marginQadixRegular.xml', 'r', encoding="utf8") as hFile :
+#         docFile = docFile.replace('{{MARGINQADIX}}', hFile.read())
+#     with open('files/modification parts/sectPrMarginsBig.xml', 'r', encoding="utf8") as hFile :
+#         docFile = docFile.replace('{{MARGINS}}', hFile.read())
+#     with open('files/modification parts/biggerSpacingBig.xml', 'r', encoding="utf8") as hFile :
+#         docFile = docFile.replace('{{BIGSPACE}}', hFile.read())
+#     with open('files/modification parts/emptyLine.xml', 'r', encoding="utf8") as hFile :
+#         docFile = docFile.replace(' {{SMALLSPACE}}', hFile.read())
+#     with open('files/modification parts/yoxebhBesether.xml', 'r', encoding="utf8") as hFile :
+#         docFile = docFile.replace('{{YOXEBBSETER}}', hFile.read())
+#     return docFile, newLine
+
+def magic(dirFromInput, wordT, pdfT, launchAfterCreating):
     #verifying if there is allready a copied folder of xmls
     if exists('TempoXMLs'):
         shutil.rmtree(os.getcwd()+'/TempoXMLs')
@@ -311,9 +334,111 @@ def magic(dirFromInput,wordT,pdfT,launchAfterCreating):
     # Read in the file
     with open('TempoXMLs/word/document.xml', 'r', encoding="utf8") as file :
         filedata = file.read()
-
+    
+    # should trying keep the doc a 2 pages size doc
+    if theNiftar.eda == 'asknz':
+        lenOfQytSq = 10
+    else:
+        lenOfQytSq = ( len(theNiftar.fullName) - 2 ) + (4 if theNiftar.eda == 'sfrd' else 6)
+        print(lenOfQytSq)
+    # TODO: function to all this and match case
+    smallerNewLine = False
+    if lenOfQytSq <= 15:
+        # filedata, smallerNewLine = shrink(filedata, False, False, False, False, False, False, False)
+        with open('files/modification parts/cementeryBlessBig.xml', 'r', encoding="utf8") as hFile :
+            filedata = filedata.replace('{{CBLESS}}', hFile.read())
+        with open('files/modification parts/marginQadixRegular.xml', 'r', encoding="utf8") as hFile :
+            filedata = filedata.replace('{{MARGINQADIX}}', hFile.read())
+        with open('files/modification parts/sectPrMarginsBig.xml', 'r', encoding="utf8") as hFile :
+            filedata = filedata.replace('{{MARGINS}}', hFile.read())
+        with open('files/modification parts/biggerSpacingBig.xml', 'r', encoding="utf8") as hFile :
+            filedata = filedata.replace('{{BIGSPACE}}', hFile.read())
+        with open('files/modification parts/emptyLine.xml', 'r', encoding="utf8") as hFile :
+            filedata = filedata.replace(' {{SMALLSPACE}}', hFile.read())
+        with open('files/modification parts/yoxebhBesether.xml', 'r', encoding="utf8") as hFile :
+            filedata = filedata.replace('{{YOXEBBSETER}}', hFile.read())
+    elif lenOfQytSq == 16:
+        with open('files/modification parts/cementeryBlessSmall.xml', 'r', encoding="utf8") as hFile :
+            filedata = filedata.replace('{{CBLESS}}', hFile.read())
+        with open('files/modification parts/marginQadixRegular.xml', 'r', encoding="utf8") as hFile :
+            filedata = filedata.replace('{{MARGINQADIX}}', hFile.read())
+        with open('files/modification parts/sectPrMarginsBig.xml', 'r', encoding="utf8") as hFile :
+            filedata = filedata.replace('{{MARGINS}}', hFile.read())
+        with open('files/modification parts/biggerSpacingBig.xml', 'r', encoding="utf8") as hFile :
+            filedata = filedata.replace('{{BIGSPACE}}', hFile.read())
+        with open('files/modification parts/emptyLine.xml', 'r', encoding="utf8") as hFile :
+            filedata = filedata.replace(' {{SMALLSPACE}}', hFile.read())
+        with open('files/modification parts/yoxebhBesether.xml', 'r', encoding="utf8") as hFile :
+            filedata = filedata.replace('{{YOXEBBSETER}}', hFile.read())
+    elif lenOfQytSq == 17:
+        with open('files/modification parts/cementeryBlessSmall.xml', 'r', encoding="utf8") as hFile :
+            filedata = filedata.replace('{{CBLESS}}', hFile.read())
+        with open('files/modification parts/marginQadixSmaller.xml', 'r', encoding="utf8") as hFile :
+            filedata = filedata.replace('{{MARGINQADIX}}', hFile.read())
+        with open('files/modification parts/sectPrMarginsSmall.xml', 'r', encoding="utf8") as hFile :
+            filedata = filedata.replace('{{MARGINS}}', hFile.read())
+        with open('files/modification parts/biggerSpacingBig.xml', 'r', encoding="utf8") as hFile :
+            filedata = filedata.replace('{{BIGSPACE}}', hFile.read())
+        with open('files/modification parts/emptyLine.xml', 'r', encoding="utf8") as hFile :
+            filedata = filedata.replace(' {{SMALLSPACE}}', hFile.read())
+        with open('files/modification parts/yoxebhBesether.xml', 'r', encoding="utf8") as hFile :
+            filedata = filedata.replace('{{YOXEBBSETER}}', hFile.read())
+    elif lenOfQytSq == 18:
+        smallerNewLine = True
+        with open('files/modification parts/cementeryBlessBig.xml', 'r', encoding="utf8") as hFile :
+            filedata = filedata.replace('{{CBLESS}}', hFile.read())
+        with open('files/modification parts/marginQadixSmaller.xml', 'r', encoding="utf8") as hFile :
+            filedata = filedata.replace('{{MARGINQADIX}}', hFile.read())
+        with open('files/modification parts/sectPrMarginsSmall.xml', 'r', encoding="utf8") as hFile :
+            filedata = filedata.replace('{{MARGINS}}', hFile.read())
+        with open('files/modification parts/biggerSpacingSmall.xml', 'r', encoding="utf8") as hFile :
+            filedata = filedata.replace('{{BIGSPACE}}', hFile.read())
+        with open('files/modification parts/emptyLineSmaller.xml', 'r', encoding="utf8") as hFile :
+            filedata = filedata.replace(' {{SMALLSPACE}}', hFile.read())
+        with open('files/modification parts/yoxebhBesether.xml', 'r', encoding="utf8") as hFile :
+            filedata = filedata.replace('{{YOXEBBSETER}}', hFile.read())
+    elif lenOfQytSq == 19:
+        smallerNewLine = True
+        with open('files/modification parts/cementeryBlessSmall.xml', 'r', encoding="utf8") as hFile :
+            filedata = filedata.replace('{{CBLESS}}', hFile.read())
+        with open('files/modification parts/marginQadixSmaller.xml', 'r', encoding="utf8") as hFile :
+            filedata = filedata.replace('{{MARGINQADIX}}', hFile.read())
+        with open('files/modification parts/sectPrMarginsSmall.xml', 'r', encoding="utf8") as hFile :
+            filedata = filedata.replace('{{MARGINS}}', hFile.read())
+        with open('files/modification parts/biggerSpacingSmall.xml', 'r', encoding="utf8") as hFile :
+            filedata = filedata.replace('{{BIGSPACE}}', hFile.read())
+        with open('files/modification parts/emptyLineSmaller.xml', 'r', encoding="utf8") as hFile :
+            filedata = filedata.replace('{{SMALLSPACE}}', hFile.read())
+        with open('files/modification parts/yoxebhBesether.xml', 'r', encoding="utf8") as hFile :
+            filedata = filedata.replace('{{YOXEBBSETER}}', hFile.read())
+    elif lenOfQytSq == 20:
+        smallerNewLine = True
+        filedata = filedata.replace('{{CBLESS}}', '') # to delete it
+        with open('files/modification parts/marginQadixSmaller.xml', 'r', encoding="utf8") as hFile :
+            filedata = filedata.replace('{{MARGINQADIX}}', hFile.read())
+        with open('files/modification parts/sectPrMarginsSmall.xml', 'r', encoding="utf8") as hFile :
+            filedata = filedata.replace('{{MARGINS}}', hFile.read())
+        with open('files/modification parts/biggerSpacingBig.xml', 'r', encoding="utf8") as hFile :
+            filedata = filedata.replace('{{BIGSPACE}}', hFile.read())
+        with open('files/modification parts/emptyLine.xml', 'r', encoding="utf8") as hFile :
+            filedata = filedata.replace(' {{SMALLSPACE}}', hFile.read())
+        with open('files/modification parts/yoxebhBesether.xml', 'r', encoding="utf8") as hFile :
+            filedata = filedata.replace('{{YOXEBBSETER}}', hFile.read())
+    elif lenOfQytSq == 21:
+        smallerNewLine = True
+        with open('files/modification parts/cementeryBlessSmall.xml', 'r', encoding="utf8") as hFile :
+            filedata = filedata.replace('{{CBLESS}}', hFile.read())
+        with open('files/modification parts/marginQadixSmaller.xml', 'r', encoding="utf8") as hFile :
+            filedata = filedata.replace('{{MARGINQADIX}}', hFile.read())
+        with open('files/modification parts/sectPrMarginsSmall.xml', 'r', encoding="utf8") as hFile :
+            filedata = filedata.replace('{{MARGINS}}', hFile.read())
+        with open('files/modification parts/biggerSpacingSmall.xml', 'r', encoding="utf8") as hFile :
+            filedata = filedata.replace('{{BIGSPACE}}', hFile.read())
+        with open('files/modification parts/emptyLineSmaller.xml', 'r', encoding="utf8") as hFile :
+            filedata = filedata.replace(' {{SMALLSPACE}}', hFile.read())
+        filedata = filedata.replace('{{YOXEBBSETER}}', '')
     # writing letters capital 119 sequence by full name & Replace the target string in the main document
-    filedata = filedata.replace('{{LETTERS}}', nameLetterSq(theNiftar.fullName))
+    filedata = filedata.replace('{{LETTERS}}', nameLetterSq(theNiftar.fullName,smallerNewLine))
     if theNiftar.eda != 'asknz':
         # modifinig the hashcabha block by name and picking it by sex & Inserting it
         filedata = filedata.replace('{{HAXCABH}}', haxcaba(theNiftar))
